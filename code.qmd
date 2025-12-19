@@ -29,25 +29,12 @@ This document walks you through creating a stunning visualization of global flig
 ### Required R Packages
 
 ```{r}
-#| label: install-packages
-#| eval: false
-
-install.packages(c(
-  "readr",      # Reading CSV files
-  "dplyr",      # Data manipulation
-  "stringr",    # String operations
-  "sf",         # Spatial data handling
-  "ggplot2",    # Visualization
-  "viridis",    # Color palettes
-  "scales",     # Scale formatting
-  "rnaturalearth" # World map data
-))
+# install.packages(c("readr","dplyr","stringr","sf","ggplot2","viridis","scales","rnaturalearth"))
 ```
 
 ### Load Libraries
 
 ```{r}
-#| label: load-libraries
 
 library(readr)
 library(dplyr)
@@ -386,7 +373,7 @@ ggsave(
   "output/flight_route_density_map.png",
   plot = map,
   width = 12,
-  height = 10,
+  height = 8,
   dpi = 300,
   bg = "white"
 )
@@ -396,7 +383,7 @@ ggsave(
   "output/flight_route_density_map_print.pdf",
   plot = map,
   width = 12,
-  height = 10,
+  height = 8,
   device = "pdf"
 )
 
