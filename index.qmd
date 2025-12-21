@@ -1,7 +1,6 @@
 ---
 title: "Global Flight Route Density Mapping - Complete Beginner's Guide"
 author: "Nimesh Akalanka (Enhanced for Beginners)"
-date: today
 format:
   html:
     toc: true
@@ -67,10 +66,7 @@ Run this code **once** to install everything:
 #| eval: false
 
 # Install all required packages
-install.packages(c(
-  "readr", "dplyr", "stringr", "sf", "ggplot2", 
-  "viridis", "scales", "rnaturalearth", "rnaturalearthdata",
-  "geosphere", "tmap"
+install.packages(c("readr", "dplyr", "stringr", "sf", "ggplot2", "viridis", "scales", "rnaturalearth", "rnaturalearthdata","geosphere", "tmap"
 ))
 ```
 
@@ -119,12 +115,12 @@ cat("✓ Folders created successfully!\n")
 # Check if we already have the airports file
 if (!file.exists("data/airports.dat")) {
   cat("📥 Downloading airports.dat...\n")
-  
+
   download.file(
     url = "https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat",
     destfile = "data/airports.dat",
     mode = "wb"
-  )
+    )
   cat("✓ Airports downloaded!\n")
 } else {
   cat("✓ Airports file already exists. Skipping download.\n")
@@ -153,11 +149,7 @@ if (!file.exists("data/routes.dat")) {
 
 ```{r}
 # Define column names for routes
-routes_column <- c(
-  "Airline", "Airline_ID", "Source_airport", "Source_airport_ID",
-  "Destination_airport", "Destination_airport_ID", 
-  "Codeshare", "Stops", "Equipment"
-)
+routes_column <- c("Airline","Airline_ID", "Source_airport", "Source_airport_ID","Destination_airport","Destination_airport_ID", "Codeshare", "Stops", "Equipment")
 
 # Read the routes file
 routes <- read_delim(
@@ -489,8 +481,6 @@ print(map_geodetic)
 ### Save High-Quality Outputs
 
 ```{r}
-#| label: save-maps
-
 # Save as PNG with grey background
 ggsave(
   "output/flight_route_density_map_geodetic.png",
@@ -531,16 +521,6 @@ You've successfully created a professional flight route density visualization!
 **Dark colors (purple/blue)** indicate:
 - Few flight routes
 - Remote or less connected regions
-
-### Expected Hot Spots
-
-Your map should show bright clusters in:
-
-1. **Eastern USA** - New York, Atlanta, Chicago
-2. **Western Europe** - London, Frankfurt, Paris
-3. **Eastern Asia** - Beijing, Tokyo, Singapore
-4. **Middle East** - Dubai, Doha
-5. **Australia** - Sydney, Melbourne
 
 ---
 
