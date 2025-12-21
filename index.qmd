@@ -62,12 +62,9 @@ Imagine you're flying from New York to Tokyo. On a flat map, the shortest path l
 Run this code **once** to install everything:
 
 ```{r}
-#| label: install-packages
 #| eval: false
-
 # Install all required packages
-install.packages(c("readr", "dplyr", "stringr", "sf", "ggplot2", "viridis", "scales", "rnaturalearth", "rnaturalearthdata","geosphere", "tmap"
-))
+install.packages(c("readr", "dplyr", "stringr", "sf", "ggplot2", "viridis", "scales", "rnaturalearth", "rnaturalearthdata", "geosphere", "tmap"))
 ```
 
 ::: {.callout-tip icon="⏱️"}
@@ -81,16 +78,16 @@ After installing packages once, you need to "load" them each time you start R:
 
 ```{r}
 # Load all libraries we'll use
-library(readr)       
-library(dplyr)       
-library(stringr)   
-library(sf)        
-library(ggplot2)     
-library(viridis)  
-library(scales)     
-library(rnaturalearth)
-library(geosphere)    
-library(tmap)    
+library(readr)         # Read CSV files
+library(dplyr)         # Data manipulation
+library(stringr)       # String operations
+library(sf)            # Spatial data handling
+library(ggplot2)       # Creating visualizations
+library(viridis)       # Color palettes
+library(scales)        # Scale functions
+library(rnaturalearth) # World map data
+library(geosphere)     # Geographic calculations
+library(tmap)          # Thematic maps
 
 cat("✓ All libraries loaded successfully!\n")
 ```
@@ -111,16 +108,18 @@ cat("✓ Folders created successfully!\n")
 
 ### Download Airport Data
 
+Download the airport location data from the jpatokal/openflights repository:
+
 ```{r}
 # Check if we already have the airports file
 if (!file.exists("data/airports.dat")) {
   cat("📥 Downloading airports.dat...\n")
-
+  
   download.file(
     url = "https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat",
     destfile = "data/airports.dat",
     mode = "wb"
-    )
+  )
   cat("✓ Airports downloaded!\n")
 } else {
   cat("✓ Airports file already exists. Skipping download.\n")
@@ -128,6 +127,8 @@ if (!file.exists("data/airports.dat")) {
 ```
 
 ### Download Routes Data
+
+Download the routes data from the jpatokal/openflights repository:
 
 ```{r}
 # Check if we already have the routes file
@@ -145,11 +146,33 @@ if (!file.exists("data/routes.dat")) {
 }
 ```
 
+### Load World Boundaries
+
+Load world boundaries from the rnaturalearth library:
+
+```{r}
+# Get world boundaries
+world <- ne_countries(scale = "medium", returnclass = "sf") %>%
+  st_transform(8857) %>% 
+  st_make_valid()      
+
+cat("✓ Loaded world boundaries\n")
+```
+
+::: {.callout-note}
+## Coordinate Reference System (CRS)
+We use EPSG:8857 (Equal Earth projection) which is excellent for global maps. It balances shape, area, and distance distortion across the entire globe.
+:::
+
 ### Load Routes Data
 
 ```{r}
 # Define column names for routes
-routes_column <- c("Airline","Airline_ID", "Source_airport", "Source_airport_ID","Destination_airport","Destination_airport_ID", "Codeshare", "Stops", "Equipment")
+routes_column <- c(
+  "Airline", "Airline_ID", "Source_airport", "Source_airport_ID",
+  "Destination_airport", "Destination_airport_ID", 
+  "Codeshare", "Stops", "Equipment"
+)
 
 # Read the routes file
 routes <- read_delim(
@@ -193,6 +216,13 @@ print(head(airports %>% select(Name, City, Country, IATA, Latitude, Longitude), 
 
 ### Convert Airports to Spatial Format
 
+Convert the airports dataframe to a spatial object:
+
+::: {.callout-important}
+## Data Requirements
+The `Latitude` and `Longitude` fields must not contain missing values for proper conversion to spatial format.
+:::
+
 ```{r}
 # Convert to spatial object
 airports_sf <- airports %>%
@@ -207,16 +237,62 @@ airports_sf <- airports %>%
 airports_sf <- st_transform(airports_sf, crs = 8857)
 
 # Save as shapefile
-st_write(airports_sf, "output/airports.shp", append = FALSE, quiet = TRUE)
+st_write(airports_sf, "output/airports.shp", delete_dsn = TRUE, quiet = TRUE)
 
 cat("✓ Created spatial object with", nrow(airports_sf), "airports\n")
 ```
 
+### Visualize Airport Locations
+
+```{r}
+#| fig-cap: "Global airport locations from OpenFlights database"
+#| fig-alt: "World map showing all airports as yellow points"
+
+# Create airport locations map
+airports_map <- tm_shape(world) + 
+  tm_polygons(
+    col = "gray20", 
+    border.col = "gray40",
+    lwd = 0.1
+  ) +  
+  tm_shape(airports_sf) + 
+  tm_dots(
+    col = "#FDE725",  # Bright yellow from viridis
+    size = 0.02,
+    alpha = 0.6,
+    border.lwd = 0
+  ) + 
+  tm_layout(
+    title = "GLOBAL AIRPORT LOCATIONS",
+    title.size = 1.2,
+    title.color = "gray15",
+    title.position = c("center", "top"),
+    title.fontface = "bold",
+    bg.color = "gray90",
+    frame = FALSE,
+    inner.margins = c(0.05, 0.05, 0.1, 0.05)
+  ) +
+  tm_credits(
+    text = "Source: jpatokal/openflights | Year: 2014 | Total Airports: 7,698", 
+    position = c("center", "bottom"), 
+    col = "gray40",
+    size = 0.6
+  )
+
+# Save the map
+tmap_save(airports_map, "output/airports_map.png", width = 16, height = 10, dpi = 300)
+
+# Display the map
+airports_map
+```
+
 ---
 
-## 🛫 Step 2: Create Geodetic (Curved) Route Lines
+## 🛫 Step 2: Create Route Lines
 
 ### Clean Routes Data
+
+Clean the routes data before joining with airports:
 
 ```{r}
 # Clean the routes data
@@ -238,7 +314,7 @@ cat("✓", nrow(routes_clean), "valid routes (from", nrow(routes), "total)\n")
 ### Join Airport Coordinates to Routes
 
 ```{r}
-# Create lookup table
+# Create lookup table for airport coordinates
 airports_lookup <- airports %>%
   mutate(
     IATA = str_trim(IATA),
@@ -272,78 +348,238 @@ write_csv(routes_joined, "output/routes_inc_locations.csv")
 cat("✓ Saved routes with coordinates:", nrow(routes_joined), "routes\n")
 ```
 
-### Create Curved Route Lines
+### Count Airport Traffic
+
+Count how many routes use each airport as source or destination:
 
 ```{r}
-# Create geodetic lines
-routes_geodetic_list <- list()
+# Count source and destination airports
+src_count <- routes_joined %>% 
+  count(Source_airport) %>% 
+  rename(IATA = Source_airport, src_count = n)
 
-cat("🔄 Creating geodetically accurate curved routes...\n")
-cat("⏱️ This may take 2-3 minutes for", nrow(routes_joined), "routes\n\n")
+dst_count <- routes_joined %>% 
+  count(Destination_airport) %>% 
+  rename(IATA = Destination_airport, dst_count = n)
 
-for (i in 1:nrow(routes_joined)) {
-  start_point <- c(routes_joined$src_lon[i], routes_joined$src_lat[i])
-  end_point <- c(routes_joined$dst_lon[i], routes_joined$dst_lat[i])
-  
-  gc_line <- gcIntermediate(
-    start_point, 
-    end_point, 
-    n = 100,
-    addStartEnd = TRUE
+# Combine counts
+airports_count <- full_join(src_count, dst_count, by = "IATA") %>%
+  mutate(
+    src_count = replace_na(src_count, 0),
+    dst_count = replace_na(dst_count, 0),
+    total = src_count + dst_count
   )
-  
-  routes_geodetic_list[[i]] <- st_linestring(gc_line)
-  
-  if (i %% 5000 == 0) {
-    cat("  ✓ Processed", i, "of", nrow(routes_joined), "routes\n")
-  }
-}
 
-cat("\n✓ Geodetic route creation complete!\n")
+# Join with coordinates
+airports_count <- left_join(airports_lookup, airports_count, by = "IATA")
+
+# Convert to spatial object
+airports_count_sf <- airports_count %>%
+  filter(!is.na(Latitude), !is.na(Longitude)) %>%
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326, remove = FALSE) %>%
+  st_transform(crs = 8857)
+
+cat("✓ Calculated airport traffic counts\n")
+cat("📊 Top 5 busiest airports by route count:\n")
+print(airports_count %>% arrange(desc(total)) %>% head(5) %>% select(IATA, total))
 ```
 
-### Convert to Spatial Object
+### Create Straight (Euclidean) Route Lines
+
+Create direct line connections between airports:
 
 ```{r}
-# Convert to spatial data frame
-routes_geodetic_sf <- st_sf(
-  routes_joined,
-  geometry = st_sfc(routes_geodetic_list, crs = 4326)
-)
-
-# Transform to Equal Earth projection
-routes_geodetic_sf <- st_transform(routes_geodetic_sf, crs = 8857)
+# Create straight line geometries
+routes_lines_sf <- routes_joined %>%
+  mutate(
+    geometry = mapply(
+      function(x1, y1, x2, y2) {
+        st_linestring(matrix(c(x1, y1, x2, y2), ncol = 2, byrow = TRUE))
+      },
+      src_lon, src_lat, dst_lon, dst_lat,
+      SIMPLIFY = FALSE
+    ) %>% st_sfc(crs = 4326)
+  ) %>%
+  st_as_sf() %>%
+  st_transform(crs = 8857)
 
 # Save as shapefile
-st_write(routes_geodetic_sf, "output/routes_geodesic.shp", delete_dsn = TRUE, quiet = TRUE)
+st_write(routes_lines_sf, "output/routes_lines.shp", delete_dsn = TRUE, quiet = TRUE)
 
-cat("✓ Created", nrow(routes_geodetic_sf), "geodetic route lines\n")
+cat("✓ Created", nrow(routes_lines_sf), "straight route lines\n")
+```
+
+### Visualize Straight Routes
+
+```{r}
+#| fig-cap: "Global airplane routes shown as straight (Euclidean) lines"
+#| fig-alt: "World map with white flight routes connecting airports, with airport dots sized by traffic"
+
+# Create map with tmap
+routes_lines_map <- tm_shape(world) + 
+  tm_polygons(
+    col = "gray20", 
+    border.col = "gray40",
+    lwd = 0.1
+  ) +  
+  tm_shape(routes_lines_sf) + 
+  tm_lines(
+    col = "#ffffff",
+    lwd = 0.001, 
+    alpha = 0.05
+  ) + 
+  tm_shape(airports_count_sf) + 
+  tm_dots(
+    col = "total",        
+    size = "total",         
+    palette = "viridis",     
+    style = "quantile",        
+    size.max = 0.3,                 
+    size.min = 0.01,               
+    border.lwd = 0,                 
+    alpha = 0.6,
+    title.size = "Routes",
+    title.col = "Total Routes"
+  ) + 
+  tm_layout(
+    title = "GLOBAL AIRPLANE ROUTES (EUCLIDEAN DISTANCE)",
+    title.size = 1.2,
+    title.color = "gray15",
+    title.position = c("center", "top"),
+    title.fontface = "bold",
+    bg.color = "gray90",
+    frame = FALSE,
+    legend.position = c("left", "bottom"),
+    legend.bg.color = "white",
+    legend.bg.alpha = 0.8,
+    legend.title.size = 0.9,
+    legend.text.size = 0.7,
+    inner.margins = c(0.05, 0.05, 0.1, 0.05)
+  ) +
+  tm_credits(
+    text = "Source: jpatokal/openflights | Year: 2014", 
+    position = c("center", "bottom"), 
+    col = "gray40",
+    size = 0.6
+  )
+
+# Save the map
+tmap_save(routes_lines_map, "output/routes_euclidean_map.png", width = 16, height = 10, dpi = 300)
+
+# Display the map
+routes_lines_map
+```
+
+::: {.callout-warning}
+## Why Straight Lines Are Misleading
+While straight lines look simple on a flat map, they don't represent how planes actually fly. Earth's curvature means the shortest distance between two points is a curve, not a straight line!
+:::
+
+### Create Curved (Geodetic) Route Lines
+
+Create realistic curved routes following Earth's surface:
+
+```{r}
+# Create geodetic lines using geosphere package
+routes_geodetic_sf <- routes_joined %>%
+  rowwise() %>%
+  mutate(
+    geometry = {
+      # Calculate great circle route
+      gc_route <- gcIntermediate(
+        c(src_lon, src_lat), 
+        c(dst_lon, dst_lat), 
+        n = 100,  # 100 intermediate points
+        addStartEnd = TRUE
+      )
+      
+      # Convert to linestring
+      st_linestring(gc_route)
+    }
+  ) %>%
+  ungroup() %>%
+  st_as_sf(crs = 4326) %>%
+  st_transform(crs = 8857)
+
+# Save as shapefile
+st_write(routes_geodetic_sf, "output/routes_geodetic_lines.shp", delete_dsn = TRUE, quiet = TRUE)
+
+cat("✓ Created", nrow(routes_geodetic_sf), "geodetic routes\n")
+```
+
+::: {.callout-tip}
+## How Geodetic Lines Work
+The `gcIntermediate()` function calculates the shortest path between two points on a sphere (Earth). By adding 100 intermediate points, we get a smooth curve that accurately represents the flight path.
+:::
+
+### Visualize Geodetic Routes
+
+```{r}
+#| fig-cap: "Global airplane routes shown as geodetic (curved) lines following Earth's curvature"
+#| fig-alt: "World map with curved white flight routes representing actual flight paths"
+
+# Create map with tmap
+routes_geodetic_map <- tm_shape(world) + 
+  tm_polygons(
+    col = "#191919", 
+    border.col = "#191919", 
+    lwd = 0
+  ) +  
+  tm_shape(routes_geodetic_sf) + 
+  tm_lines(
+    col = "#ffffff", 
+    lwd = 0.001, 
+    alpha = 0.05
+  ) + 
+  tm_shape(airports_count_sf) + 
+  tm_dots(
+    col = "total",        
+    size = "total",         
+    palette = "viridis",     
+    style = "quantile",        
+    size.max = 10,                 
+    size.min = 2,               
+    border.lwd = 0,                  
+    alpha = 0.6
+  ) + 
+  tm_layout(
+    title = "GLOBAL AIRPLANE ROUTES (GEODESIC DISTANCE)",
+    title.size = 0.9,
+    title.color = "#ffffff",
+    title.position = c("left", "bottom"),
+    title.fontface = "bold",
+    bg.color = "#030303",
+    frame = FALSE
+  ) +
+  tm_credits(
+    text = "Source: jpatokal/openflights | Year: 2014", 
+    position = c("left", "bottom"), 
+    col = "#a0a3ad", 
+    size = 0.7
+  )
+
+# Save the map
+tmap_save(routes_geodetic_map, "output/routes_geodetic_map.png", width = 16, height = 10, dpi = 300)
+
+# Display the map
+routes_geodetic_map
 ```
 
 ---
 
 ## 🔶 Step 3: Create Hexagonal Grid
 
-### Load World Boundaries
+### Generate Hexagon Grid
+
+Create a hexagonal grid overlay for the world:
 
 ```{r}
-# Get world boundaries
-world <- ne_countries(scale = "medium", returnclass = "sf") %>%
-  st_transform(8857) %>%
-  st_make_valid()
-
-cat("✓ Loaded world boundaries\n")
-```
-
-### Create Hexagon Grid
-
-```{r}
-# Create hexagonal grid
+# Create hexagonal grid (100km cell size)
 hexgrid <- st_make_grid(
   world,
-  cellsize = 1e5,  # 100km
+  cellsize = 1e5,  # 100,000 meters = 100 km
   what = "polygons",
-  square = FALSE
+  square = FALSE   # FALSE creates hexagons
 ) %>%
   st_as_sf() %>%
   mutate(id = row_number())
@@ -351,11 +587,24 @@ hexgrid <- st_make_grid(
 cat("✓ Created hexagon grid with", nrow(hexgrid), "hexagons\n")
 ```
 
+::: {.callout-note}
+## Why Hexagons?
+Hexagons are ideal for spatial analysis because:
+
+- Each hexagon touches 6 neighbors (more than squares)
+- They minimize edge effects and sampling bias
+- They're visually appealing and easy to interpret
+:::
+
 ### Filter to Land Hexagons
 
+Keep only hexagons that intersect with land:
+
 ```{r}
-# Keep only hexagons over land
+# Union all countries into single geometry
 land_union <- st_union(world)
+
+# Keep hexagons that intersect land
 hexgrid_world <- hexgrid[lengths(st_intersects(hexgrid, land_union)) > 0, ]
 
 cat("✓ Filtered to", nrow(hexgrid_world), "hexagons over land\n")
@@ -368,22 +617,24 @@ st_write(hexgrid_world, "output/world_hexgrid.shp", delete_layer = TRUE, quiet =
 
 ## 🔢 Step 4: Count Routes per Hexagon
 
-### Calculate Intersections
+### Calculate Route-Hexagon Intersections
+
+Count how many routes pass through each hexagon:
 
 ```{r}
 cat("🔍 Calculating route-hexagon intersections...\n")
-cat("⏱️ This may take 1-2 minutes\n\n")
+cat("⏱️ This may take 1-2 minutes for", nrow(routes_geodetic_sf), "routes\n\n")
 
-# Find intersections
+# Find which routes intersect each hexagon
 intersections_geodetic <- st_intersects(hexgrid_world, routes_geodetic_sf)
 
 cat("✓ Intersection calculation complete\n")
 ```
 
-### Add Route Counts
+### Add Route Counts to Hexagons
 
 ```{r}
-# Add counts to hexagons
+# Count routes per hexagon
 hexgrid_world_geodetic_cnt <- hexgrid_world %>%
   mutate(nm_rts = lengths(intersections_geodetic))
 
@@ -399,128 +650,136 @@ cat("✓ Added route counts to hexagons\n\n")
 
 # Summary statistics
 cat("📊 Route Count Statistics:\n")
-cat("========================\n")
-summary(hexgrid_world_geodetic_cnt$nm_rts)
+cat("----------------------------\n")
+summary_stats <- summary(hexgrid_world_geodetic_cnt$nm_rts)
+print(summary_stats)
 
-cat("\n📍 Additional Insights:\n")
-cat("- Hexagons with 0 routes:", sum(hexgrid_world_geodetic_cnt$nm_rts == 0), "\n")
-cat("- Hexagons with 100+ routes:", sum(hexgrid_world_geodetic_cnt$nm_rts >= 100), "\n")
-cat("- Maximum routes in one hexagon:", max(hexgrid_world_geodetic_cnt$nm_rts), "\n")
+# Additional insights
+cat("\n📍 Key Insights:\n")
+cat("• Hexagons with routes:", sum(hexgrid_world_geodetic_cnt$nm_rts > 0), "\n")
+cat("• Hexagons with 100+ routes:", sum(hexgrid_world_geodetic_cnt$nm_rts >= 100), "\n")
+cat("• Maximum routes in a hexagon:", max(hexgrid_world_geodetic_cnt$nm_rts), "\n")
 ```
 
 ---
 
 ## 🎨 Step 5: Create Final Visualization
 
-### Create Beautiful Flight Density Map
+### Create Flight Density Heat Map
 
 ```{r}
-# Create the map with grey background
-map_geodetic <- ggplot() +
-  
-  # World boundaries
-  geom_sf(
-    data = world, 
-    fill = "gray20",      # Dark grey landmass
-    color = "gray40",     # Slightly lighter borders
-    linewidth = 0.1
+#| fig-width: 16
+#| fig-height: 10
+#| fig-cap: "Global flight route density showing areas with highest air traffic"
+#| fig-alt: "Heat map showing flight route density with bright colors indicating high traffic"
+
+# Create the final map using tmap
+map_geodetic <- tm_shape(world) +
+  tm_polygons(
+    col = "gray20",
+    border.col = "gray40",
+    lwd = 0.1
   ) +
-  
-  # Hexagonal grid with route counts
-  geom_sf(
-    data = hexgrid_world_geodetic_cnt, 
-    aes(fill = nm_rts),
-    color = NA,
-    alpha = 0.85
+  tm_shape(hexgrid_world_geodetic_cnt) +
+  tm_polygons(
+    col = "nm_rts",
+    palette = "plasma",
+    style = "cont",
+    alpha = 0.85,
+    border.col = NA,
+    title = "Number of\nFlight Routes",
+    breaks = c(0, 10, 50, 100, 250, 500, 1000, 2500, max(hexgrid_world_geodetic_cnt$nm_rts)),
+    labels = c("0-10", "10-50", "50-100", "100-250", "250-500", "500-1000", "1000-2500", "2500+"),
+    legend.format = list(text.separator = "-")
   ) +
-  
-  # Color scale
-  scale_fill_viridis_c(
-    option = "plasma",
-    name = "Number of\nFlight Routes",
-    trans = "sqrt",
-    breaks = c(0, 10, 50, 100, 250, 500, 1000, 2500),
-    labels = comma,
-    guide = guide_colorbar(
-      barwidth = 15,
-      barheight = 0.5,
-      title.position = "top",
-      title.hjust = 0.5
-    )
-  ) +
-  
-  # Labels
-  labs(
+  tm_layout(
     title = "Global Flight Route Density (Geodetic Routes)",
-    subtitle = "Using geodetically accurate curved routes that follow Earth's curvature",
-    caption = "Data: OpenFlights | Routes follow great circle paths"
+    title.size = 1.2,
+    title.position = c("center", "top"),
+    title.fontface = "bold",
+    bg.color = "gray90",
+    frame = FALSE,
+    legend.position = c("left", "bottom"),
+    legend.bg.color = "white",
+    legend.bg.alpha = 0.8,
+    legend.title.size = 0.9,
+    legend.text.size = 0.7,
+    legend.width = 1.2,
+    inner.margins = c(0.05, 0.05, 0.1, 0.05)
   ) +
-  
-  # Theme with grey background
-  theme_minimal() +
-  theme(
-    plot.title = element_text(size = 18, face = "bold", hjust = 0.5, color = "white"),
-    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray70"),
-    plot.caption = element_text(size = 8, color = "gray60", hjust = 1),
-    legend.position = "bottom",
-    legend.title = element_text(size = 10, face = "bold", color = "white"),
-    legend.text = element_text(size = 8, color = "gray80"),
-    panel.grid = element_blank(),
-    axis.text = element_blank(),
-    axis.title = element_blank(),
-    plot.background = element_rect(fill = "gray15", color = NA),   # Dark grey background
-    panel.background = element_rect(fill = "gray15", color = NA)   # Dark grey panel
-  ) +
-  
-  coord_sf(crs = 8857)
+  tm_credits(
+    text = "Using geodetically accurate curved routes that follow Earth's curvature\nData: OpenFlights | Routes follow great circle paths | Hexagon size: 100km",
+    position = c("center", "bottom"),
+    size = 0.6,
+    col = "gray40"
+  )
+
+# Save the map
+tmap_save(
+  map_geodetic,
+  "output/flight_density_map_final.png",
+  width = 16,
+  height = 10,
+  dpi = 300
+)
 
 # Display the map
-print(map_geodetic)
+map_geodetic
 ```
 
-### Save High-Quality Outputs
+::: {.callout-tip icon="🎨"}
+## Color Scale Interpretation
 
-```{r}
-# Save as PNG with grey background
-ggsave(
-  "output/flight_route_density_map_geodetic.png",
-  plot = map_geodetic,
-  width = 16,
-  height = 10,
-  dpi = 300,
-  bg = "gray15"
-)
-
-# Save as PDF
-ggsave(
-  "output/flight_route_density_map_geodetic_print.pdf",
-  plot = map_geodetic,
-  width = 16,
-  height = 10,
-  device = "pdf"
-)
-
-cat("✓ Maps saved successfully!\n")
-cat("  - flight_route_density_map_geodetic.png (300 DPI)\n")
-cat("  - flight_route_density_map_geodetic_print.pdf\n")
-```
+- **Dark purple/blue (0-50 routes)**: Remote or less-connected regions
+- **Pink/orange (50-250 routes)**: Moderate air traffic
+- **Bright yellow (250+ routes)**: Major aviation corridors and hubs
+:::
 
 ---
 
 ## 🎉 Success!
 
-You've successfully created a professional flight route density visualization! 
+Congratulations! You've successfully created a professional flight route density visualization! 
 
-### What the Map Shows
+### What You've Learned
+
+✅ How to download and process geospatial data  
+✅ The difference between Euclidean and geodetic distances  
+✅ How to create and work with hexagonal grids  
+✅ How to perform spatial intersections  
+✅ How to create professional data visualizations with ggplot2
+
+### Key Insights from Your Map
 
 **Bright colors (yellow/pink)** indicate:
+
 - High concentration of flight routes
-- Major aviation hubs
-- Well-connected regions
+- Major aviation hubs (e.g., Europe, North America, East Asia)
+- Well-connected regions with frequent air traffic
 
 **Dark colors (purple/blue)** indicate:
+
 - Few flight routes
 - Remote or less connected regions
+- Lower air traffic density
+
+### Next Steps
+
+Want to take this further? Try:
+
+1. **Filter by airline or region**: Analyze specific airline networks
+2. **Time-based analysis**: Compare route patterns across years
+3. **Network analysis**: Calculate connectivity metrics between airports
+4. **Interactive maps**: Use `leaflet` to create web-based interactive versions
+
+---
+
+## 📚 Additional Resources
+
+- [sf package documentation](https://r-spatial.github.io/sf/)
+- [ggplot2 cheat sheet](https://rstudio.github.io/cheatsheets/html/data-visualization.html)
+- [OpenFlights database](https://openflights.org/data.html)
+- [Spatial data science book](https://r-spatial.org/book/)
 
 ---
 
@@ -529,3 +788,23 @@ You've successfully created a professional flight route density visualization!
 ```{r}
 sessionInfo()
 ```
+
+---
+
+## 💾 Files Created
+
+This tutorial creates the following files in the `output` folder:
+
+| File | Description |
+|------|-------------|
+| `routes.csv` | Raw routes data |
+| `airports.csv` | Raw airports data |
+| `airports.shp` | Airports as spatial points |
+| `airports_map.png` | Map showing all airport locations |
+| `routes_lines.shp` | Straight (Euclidean) route lines |
+| `routes_geodetic_lines.shp` | Curved (geodetic) route lines |
+| `world_hexgrid.shp` | Hexagonal grid over land |
+| `world_hexgrid_geodetic_count.shp` | Hexagons with route counts |
+| `routes_euclidean_map.png` | Map with straight routes and airports |
+| `routes_geodetic_map.png` | Map with curved routes and airports |
+| `flight_density_map_final.png` | Final heat map visualization |
