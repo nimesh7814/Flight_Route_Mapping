@@ -264,13 +264,19 @@ airports_map <- tm_shape(world) +
     bg.color = "gray90",
     frame = FALSE,
     legend.position = c("left", "bottom"),
-    legend.bg.color = "white",
-    legend.bg.alpha = 0.8,
-    legend.title.size = 0.9,
-    legend.text.size = 0.7,
-    inner.margins = c(0.02, 0.01, 0.04, 0.02),
+    legend.bg.color = "#16213e",
+    legend.bg.alpha = 0.85,
+    legend.frame.color = "#0f3460",
+    legend.frame.lwd = 2,
+    legend.title.size = 1.1,
+    legend.title.color = "#ffffff",
+    legend.title.fontface = "bold",
+    legend.text.size = 0.85,
+    legend.text.color = "#e8e8e8",
+    inner.margins = c(0.02, 0.02, 0.08, 0.02),
     outer.margins = c(0, 0, 0, 0),
-    asp = 1.8 
+    asp = 1.8,
+    fontfamily = "sans"
   ) +
   tm_credits(
     text = "Source: jpatokal/openflights | Year: 2014 | Total Airports: 7,698", 
@@ -280,7 +286,7 @@ airports_map <- tm_shape(world) +
   )
 
 # Save the map
-tmap_save(airports_map, "output/01.airports_map.png", width = 16, height = 10, dpi = 300)
+tmap_save(airports_map, "output/01.airports_map.png", width = 18, height = 10,  dpi = 400)
 
 # Display the map
 airports_map
@@ -400,6 +406,7 @@ world_busiest_airports_map <- tm_shape(world, bbox = st_bbox(c(xmin = -180, xmax
     size.scale = tm_scale_continuous(values.scale = 1000),
     border.lwd = 0,                 
     alpha = 0.6,
+    legend.reverse = TRUE,
     legend.col.show = TRUE,
     legend.size.show = FALSE,
     col.legend = tm_legend(title = "Total Flights")
@@ -413,13 +420,19 @@ world_busiest_airports_map <- tm_shape(world, bbox = st_bbox(c(xmin = -180, xmax
     bg.color = "#252525",
     frame = FALSE,
     legend.position = c("left", "bottom"),
-    legend.bg.color = "white",
-    legend.bg.alpha = 0.8,
-    legend.title.size = 0.9,
-    legend.text.size = 0.7,
-    inner.margins = c(0.02, 0.01, 0.04, 0.02),
+    legend.bg.color = "#16213e",
+    legend.bg.alpha = 0.85,
+    legend.frame.color = "#0f3460",
+    legend.frame.lwd = 2,
+    legend.title.size = 1.1,
+    legend.title.color = "#ffffff",
+    legend.title.fontface = "bold",
+    legend.text.size = 0.85,
+    legend.text.color = "#e8e8e8",
+    inner.margins = c(0.02, 0.02, 0.08, 0.02),
     outer.margins = c(0, 0, 0, 0),
-    asp = 1.8 
+    asp = 1.8,
+    fontfamily = "sans"
   ) +
   tm_credits(
     text = "Source: jpatokal/openflights | Year: 2014", 
@@ -429,7 +442,7 @@ world_busiest_airports_map <- tm_shape(world, bbox = st_bbox(c(xmin = -180, xmax
   )
 
 # Save the map
-tmap_save(world_busiest_airports_map, "output/02.world_busiest_airports_map.png", width = 16, height = 10, dpi = 300)
+tmap_save(world_busiest_airports_map, "output/02.world_busiest_airports_map.png", width = 18, height = 10,  dpi = 400)
 
 # Display the map
 world_busiest_airports_map
@@ -473,8 +486,8 @@ routes_lines_map <- tm_shape(world) +
   tm_shape(routes_lines_sf) + 
   tm_lines(
     col = "#ffffff",
-    lwd = 0.001, 
-    alpha = 0.05
+    lwd = 0.1, 
+    alpha = 0.08
   ) +
   tm_shape(airports_count_sf) + 
   tm_dots(
@@ -482,9 +495,10 @@ routes_lines_map <- tm_shape(world) +
     size = "total",         
     palette = "viridis",     
     style = "quantile",
-    size.scale = tm_scale_continuous(values.scale = 1000),
+    size.scale = tm_scale_continuous(values.scale = 10),
     border.lwd = 0,                 
     alpha = 0.6,
+    legend.reverse = TRUE,
     legend.col.show = TRUE,
     legend.size.show = FALSE,
     col.legend = tm_legend(title = "Total Flights")
@@ -498,13 +512,19 @@ routes_lines_map <- tm_shape(world) +
     bg.color = "#252525",
     frame = FALSE,
     legend.position = c("left", "bottom"),
-    legend.bg.color = "white",
-    legend.bg.alpha = 0.8,
-    legend.title.size = 0.9,
-    legend.text.size = 0.7,
-    inner.margins = c(0.02, 0.01, 0.04, 0.02),
+    legend.bg.color = "#16213e",
+    legend.bg.alpha = 0.85,
+    legend.frame.color = "#0f3460",
+    legend.frame.lwd = 2,
+    legend.title.size = 1.1,
+    legend.title.color = "#ffffff",
+    legend.title.fontface = "bold",
+    legend.text.size = 0.85,
+    legend.text.color = "#e8e8e8",
+    inner.margins = c(0.02, 0.02, 0.08, 0.02),
     outer.margins = c(0, 0, 0, 0),
-    asp = 1.8
+    asp = 1.8,
+    fontfamily = "sans"
   ) +
   tm_credits(
     text = "Source: jpatokal/openflights | Year: 2014", 
@@ -514,7 +534,7 @@ routes_lines_map <- tm_shape(world) +
   )
 
 # Save the map
-tmap_save(routes_lines_map, "output/03.routes_euclidean_map.png", width = 16, height = 10, dpi = 300)
+tmap_save(routes_lines_map, "output/03.routes_euclidean_map.png", width = 18, height = 10,  dpi = 400)
 
 # Display the map
 routes_lines_map
@@ -574,8 +594,8 @@ routes_geodetic_map <- tm_shape(world) +
   tm_shape(routes_geodetic_sf) + 
   tm_lines(
     col = "#ffffff", 
-    lwd = 0.001, 
-    alpha = 0.05
+    lwd = 0.1, 
+    alpha = 0.08
   ) + 
   tm_shape(airports_count_sf) + 
   tm_dots(
@@ -583,9 +603,10 @@ routes_geodetic_map <- tm_shape(world) +
     size = "total",         
     palette = "viridis",     
     style = "quantile",
-    size.scale = tm_scale_continuous(values.scale = 1000),
+    size.scale = tm_scale_continuous(values.scale = 10),
     border.lwd = 0,                 
     alpha = 0.6,
+    legend.reverse = TRUE,
     legend.col.show = TRUE,
     legend.size.show = FALSE,
     col.legend = tm_legend(title = "Total Flights")
@@ -599,13 +620,19 @@ routes_geodetic_map <- tm_shape(world) +
     bg.color = "#252525",
     frame = FALSE,
     legend.position = c("left", "bottom"),
-    legend.bg.color = "white",
-    legend.bg.alpha = 0.8,
-    legend.title.size = 0.9,
-    legend.text.size = 0.7,
-    inner.margins = c(0.02, 0.01, 0.04, 0.02),
+    legend.bg.color = "#16213e",
+    legend.bg.alpha = 0.85,
+    legend.frame.color = "#0f3460",
+    legend.frame.lwd = 2,
+    legend.title.size = 1.1,
+    legend.title.color = "#ffffff",
+    legend.title.fontface = "bold",
+    legend.text.size = 0.85,
+    legend.text.color = "#e8e8e8",
+    inner.margins = c(0.02, 0.02, 0.08, 0.02),
     outer.margins = c(0, 0, 0, 0),
-    asp = 1.8
+    asp = 1.8,
+    fontfamily = "sans"
   ) +
   tm_credits(
     text = "Source: jpatokal/openflights | Year: 2014", 
@@ -615,7 +642,7 @@ routes_geodetic_map <- tm_shape(world) +
   )
 
 # Save the map
-tmap_save(routes_geodetic_map, "output/04.routes_geodetic_map.png", width = 16, height = 10, dpi = 300)
+tmap_save(routes_geodetic_map, "output/04.routes_geodetic_map.png", width = 18, height = 10,  dpi = 400)
 
 # Display the map
 routes_geodetic_map
@@ -694,8 +721,7 @@ cat("✓ Intersection calculation complete\n")
 
 ```{r}
 # Count routes per hexagon
-hexgrid_world_geodetic_cnt <- hexgrid_world %>%
-  mutate(nm_rts = lengths(intersections_geodetic))
+hexgrid_world_geodetic_cnt <- hexgrid_world %>% mutate(nm_rts = lengths(intersections_geodetic))
 
 # Save result
 st_write(hexgrid_world_geodetic_cnt, "output/world_hexgrid_geodetic_count.shp", delete_layer = TRUE, quiet = TRUE)
@@ -732,15 +758,15 @@ map_geodetic <- tm_shape(world) +
   tm_shape(hexgrid_world_geodetic_cnt) +
   tm_polygons(
     col = "nm_rts",
-    palette = c("#440154", "#31688e", "#35b779", "#fde724"),  # Viridis-inspired gradient
+    palette = c("#440154", "#31688e", "#35b779", "#fde724"), 
     style = "fixed",
     alpha = 0.9,
     border.col = "#0a0e27",
     lwd = 2,
     title = "Flight Routes",
     breaks = c(0, 10, 50, 100, 250, 500, 1000, 2500, max(hexgrid_world_geodetic_cnt$nm_rts)),
-    labels = c("0-10", "10-50", "50-100", "100-250", "250-500", "500-1000", "1000-2500", 
-               paste0(">2500")),
+    labels = c("0-10", "10-50", "50-100", "100-250", "250-500", "500-1000", "1000-2500", paste0(">2500")),
+    legend.reverse = TRUE,
     legend.format = list(text.separator = " ")
   ) +
   tm_layout(
@@ -754,7 +780,7 @@ map_geodetic <- tm_shape(world) +
     legend.position = c("left", "bottom"),
     legend.bg.color = "#16213e",
     legend.bg.alpha = 0.85,
-    legend.frame = "#0f3460",
+    legend.frame.color = "#0f3460",
     legend.frame.lwd = 2,
     legend.title.size = 1.1,
     legend.title.color = "#ffffff",
@@ -779,24 +805,20 @@ map_geodetic <- tm_shape(world) +
     size = 2,
     color.dark = "#fde724",
     color.light = "#ffffff",
-    text.size = 0.6
+    text.size = 0.6,
+    text.color = "#ffffff"
   ) +
   tm_scale_bar(
     position = c("right", "bottom"),
     text.size = 0.6,
+    text.color = "#ffffff",
     color.dark = "#ffffff",
     color.light = "#94a3b8",
     breaks = c(0, 2000, 4000, 6000)
   )
 
 # Save the enhanced map
-tmap_save(
-  map_geodetic,
-  "output/05.Hexagon_Grid_flight_density_map.png",
-  width = 18,
-  height = 10,
-  dpi = 400
-)
+tmap_save(map_geodetic,"output/05.Hexagon_Grid_flight_density_map.png",width = 18,height = 10,dpi = 400)
 
 # Display the map
 map_geodetic
