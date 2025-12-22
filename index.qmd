@@ -1,6 +1,7 @@
 ---
 title: "Global Flight Route Density Mapping"
 author: "Nimesh Akalanka"
+date: today
 format:
   html:
     toc: true
@@ -46,17 +47,6 @@ Imagine you're flying from New York to Tokyo. On a flat map, the shortest path l
 
 ---
 
-## 🛠️ Prerequisites
-
-### What is R?
-
-**R** is a free programming language designed for statistics and data visualization. Think of it as Microsoft Excel on steroids - it can handle millions of data points and create professional visualizations.
-
-### What You Need to Install
-
-1. **R** (the programming language): Download from [r-project.org](https://www.r-project.org/)
-2. **RStudio** (makes R easier to use): Download from [posit.co](https://posit.co/download/rstudio-desktop/)
-
 ### Install Required R Packages
 
 Run this code **once** to install everything:
@@ -67,7 +57,7 @@ Run this code **once** to install everything:
 install.packages(c(
   "readr", "dplyr", "tidyr", "stringr", "sf", "ggplot2", 
   "viridis", "scales", "rnaturalearth", 
-  "rnaturalearthdata", "geosphere", "tmap"
+  "rnaturalearthdata", "geosphere", "tmap", "purrr"
 ))
 ```
 
@@ -92,7 +82,8 @@ library(viridis)
 library(scales)      
 library(rnaturalearth) 
 library(geosphere)     
-library(tmap)      
+library(tmap)
+library(purrr)     
 
 cat("✓ All libraries loaded successfully!\n")
 ```
