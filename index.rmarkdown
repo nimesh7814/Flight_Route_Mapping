@@ -683,7 +683,7 @@ map_geodetic <- tm_shape(world) +
   tm_polygons(
     col = "gray20",
     border.col = "gray40",
-    lwd = 0
+    lwd = 0.1
   ) +
   tm_shape(hexgrid_world_geodetic_cnt) +
   tm_polygons(
@@ -691,7 +691,6 @@ map_geodetic <- tm_shape(world) +
     palette = "plasma",
     style = "cont",
     alpha = 0.85,
-    lwd = 0,
     border.col = NA,
     title = "Number of\nFlight Routes",
     breaks = c(0, 10, 50, 100, 250, 500, 1000, 2500, max(hexgrid_world_geodetic_cnt$nm_rts)),
